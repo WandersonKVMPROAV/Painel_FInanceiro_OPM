@@ -373,10 +373,11 @@ var ROWS = DATA.rows.map(function(r){
   var o = {p:r[0], s:r[1], car:r[2], col:r[3], per:r[4], ano:r[5], cic:r[6], q:r[7], vu:r[8], vf:(r[9]==null?0:r[9]), base:r[10], reemb:r[11]};
   o.sav = o.vu - o.vf;
   o.kvm = o.col === COL_KVM;
-  o.pend = o.vf === 0 && !o.kvm;
   o.uf = DATA.pts[o.p].uf;
   var mm = periodMonths(DATA.per[o.per], o.cic); o.m0 = mm[0]; o.m1 = mm[1];
   o.start = new Date(o.ano, o.m0-1, 1); o.end = new Date(o.ano, o.m1, 1);
+  // período encerrado: o valor da planilha é definitivo (zero = sem custo de freela). Só fica pendente o que ainda está em andamento ou programado.
+  o.pend = o.vf === 0 && !o.kvm && NOW < o.end;
   // done: custo lançado ou equipe KVM | open: período atual sem custo | late: período encerrado sem custo | future: período não começou
   o.st = !o.pend ? "done" : (NOW >= o.end ? "late" : (NOW >= o.start ? "open" : "future"));
   return o;
@@ -443,7 +444,7 @@ function statusOf(a){
   return "done";
 }
 var STATUS_TXT = {done:"Concluído", open:"Em andamento", late:"Pendente", future:"Programado", none:"Sem itens"};
-var STATUS_HINT = {done:"custo lançado ou equipe KVM", open:"período atual, custo ainda não lançado", late:"período encerrado sem custo lançado", future:"período ainda não começou"};
+var STATUS_HINT = {done:"custo lançado, equipe KVM ou período encerrado", open:"período atual, custo ainda não lançado", late:"período encerrado sem custo lançado", future:"período ainda não começou"};
 var STATUS_COLOR = {done:"var(--c-ok)", open:"var(--c-mid)", late:"var(--c-neg)", future:"var(--c-gasto)", none:"var(--c-gasto)"};
 var STATUS_ORDER = ["late","open","future","done"];
 var LEGEND_ORDER = ["done","open","late","future"];
@@ -572,7 +573,7 @@ function renderTopbar(){
     sel("per","Período",[["all","Todos"]].concat(DATA.per.map(function(p,i){return [i,p];}))) +
     sel("col","Colaborador",[["all","Todos"]].concat(DATA.col.map(function(c,i){return [i,c];}))) +
     sel("uf","Estado",[["all","Todos"]].concat(ufs.map(function(u){return [u, u+" – "+GEO.ufs[u].n];}))) +
-    sel("st","Status",[["all","Todos"],["done","Concluído"],["open","Em andamento"],["late","Pendente"],["future","Programado"]]) +
+    sel("st","Status",[["all","Todos"],["done","Concluído"],["open","Em andamento"],["future","Programado"]]) +
     '<div class="topbar-right">'+
       (anyFilter() ? '<button class="btn btn-ghost" id="clearF">Limpar filtros</button>' : '')+
       (inShell() ? '<button class="btn btn-ghost" id="lockBtn" title="Bloquear o painel neste dispositivo">🔒 Sair</button>' : '')+
